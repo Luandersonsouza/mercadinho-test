@@ -10,28 +10,28 @@ import webbrowser
 
 window = Tk()
 class reports():
-	def print_customers(self):
-		webbrowser.open("customer.pdf")
+	def print_product(self):
+		webbrowser.open("products.pdf")
 
 
-	def generate_customer_report(self):
-		self.c = canvas.Canvas("customer.pdf")
+	def generate_product_report(self):
+		self.c = canvas.Canvas("products.pdf")
 
 		self.code_report = self.code_entry.get()
 		self.name_report = self.name_entry.get()
-		self.phone_report = self.phone_entry.get()
+		self.value_report = self.value_entry.get()
 		self.city_report = self.city_entry.get()
 		self.c.setFont("Helvetica-Bold", 24)
-		self.c.drawString(200, 790, 'Customer File')
+		self.c.drawString(200, 790, 'Product File')
 		self.c.setFont("Helvetica-Bold", 18)
 		self.c.drawString(50, 700,'Code : ')
 		self.c.drawString(50, 670,'Name : ')
-		self.c.drawString(50, 630,'Phone : ')
-		self.c.drawString(50, 600,'City : ')
+		self.c.drawString(50, 630,'Value : ')
+		self.c.drawString(50, 600,'Expiration : ')
 		self.c.setFont("Helvetica", 18)
 		self.c.drawString(150, 700, self.code_report)
 		self.c.drawString(150, 670, self.name_report)
-		self.c.drawString(150, 630, self.phone_report)
+		self.c.drawString(150, 630, self.value_report)
 		self.c.drawString(150, 600, self.city_report)
 		self.c.rect(20,550,550,200, fill = False, stroke = True)
 		self.c.showPage()
@@ -42,12 +42,12 @@ class functions():
 	def clear_frame_1(self):
 		self.code_entry.delete(0, END)
 		self.name_entry.delete(0, END)
-		self.phone_entry.delete(0, END)
-		self.city_entry.delete(0,END)
+		self.value_entry.delete(0, END)
+		self.expiration_entry.delete(0,END)
 
 
 	def db_connection(self):
-		self.conn = sqlite3.connect("customers.db")
+		self.conn = sqlite3.connect("products.db")
 		self.cursor = self.conn.cursor();print("connecting to database")
 
 
@@ -58,13 +58,13 @@ class functions():
 	def create_tables_db(self):
 		self.db_connection() 
 		self.cursor.execute("""
-			CREATE TABLE IF NOT EXISTS customers( 
+			CREATE TABLE IF NOT EXISTS products( 
 				code INTEGER PRIMARY KEY,
-				name_customers CHAR(40) NOT NULL,
-				phone INTEGER(20),
-				city CHAR(40)
+				name_products CHAR(40) NOT NULL,
+				value INTEGER(20),
+				expiration CHAR(40)
 			);
-		""")
+		                    """)
 		self.conn.commit(); print("Created database")
 		self.db_disconnection()
 
@@ -72,17 +72,17 @@ class functions():
 	def variables(self):
 		self.code = self.code_entry.get()
 		self.name = self.name_entry.get()
-		self.phone = self.phone_entry.get()
-		self.city = self.city_entry.get()
+		self.value = self.value_entry.get()
+		self.expiration = self.expiration_entry.get()
 
 
-	def add_customer(self):
+	def add_product(self):
 		self.variables()
 		self.db_connection()
 		self.cursor.execute(""" INSERT INTO 
-								customers (name_customers, phone, city)
+								products (name_products, value, expiration)
 								VALUES (?,?,?)""", 
-								(self.name, self.phone, self.city))
+								(self.name, self.value, self.expiration))
 		self.conn.commit()
 		self.db_disconnection()
 		self.select()
@@ -92,9 +92,9 @@ class functions():
 	def select(self):
 		self.listaCli.delete(*self.listaCli.get_children())
 		self.db_connection()
-		list_a = self.cursor.execute("""	SELECT code, name_customers, phone, city 
-											FROM customers
-											ORDER BY name_customers ASC; 
+		list_a = self.cursor.execute("""	SELECT code, name_products, value, expiration 
+											FROM products
+											ORDER BY name_products ASC; 
 									""")
 		for i in list_a:
 			self.listaCli.insert("", END, values=i)
@@ -108,42 +108,42 @@ class functions():
 			col1,col2,col3,col4 = self.listaCli.item(n, 'values')
 			self.code_entry.insert(END, col1)
 			self.name_entry.insert(END, col2)
-			self.phone_entry.insert(END, col3)
-			self.city_entry.insert(END, col4)
+			self.value_entry.insert(END, col3)
+			self.expiration_entry.insert(END, col4)
 
 
-	def delete_customer(self):
+	def delete_product(self):
 		self.variables()
 		self.db_connection()
-		self.cursor.execute("""DELETE FROM customers WHERE cod = ?  """, (self.code))
+		self.cursor.execute("""DELETE FROM products WHERE code = ?  """, (self.code))
 		self.conn.commit()
 		self.db_disconnection()
 		self.clear_frame_1()
 		self.select()
 
 
-	def change_customers(self):
+	def change_products(self):
 		self.variables()
 		self.db_connection()
-		self.cursor.execute(""" UPDATE customers SET name_customers = ?, phone = ?, city = ?
-							WHERE code = ?""", (self.name, self.phone, self.city, self.code))
+		self.cursor.execute(""" UPDATE products SET name_products = ?, value = ?, expiration = ?
+							WHERE code = ?""", (self.name, self.value, self.expiration, self.code))
 		self.conn.commit()
 		self.db_disconnection()
 		self.select()
 		self.clear_frame_1()
 
 
-	def search_customer (self):
+	def search_product (self):
 		self.db_connection()
 		self.listaCli.delete(*self.listaCli.get_children())
 		self.name_entry.insert(END, '%')
 		name = self.name_entry.get()
-		self.cursor.execute(""" SELECT code, name_customers, phone, city
-								FROM customers 
-								WHERE name_customers LIKE '%s' ORDER BY name_customers ASC
+		self.cursor.execute(""" SELECT code, name_products, value, expiration
+								FROM products 
+								WHERE name_products LIKE '%s' ORDER BY name_products ASC
 							""" %name)
-		search_name_customer = self.cursor.fetchall()
-		for i in search_name_customer:
+		search_name_product = self.cursor.fetchall()
+		for i in search_name_product:
 			self.listaCli.insert("", END, values =i)
 		self.clear_frame_1()
 		self.db_disconnection()
@@ -162,7 +162,7 @@ class aplication(functions, reports):
 
 
 	def screen(self):
-		self.window.title("customer registration")
+		self.window.title("Kmercado")
 		self.window.configure(background= '#6495ED')
 		self.window.geometry("700x500")
 		self.window.resizable(True, True)
@@ -183,46 +183,54 @@ class aplication(functions, reports):
 									 fg = 'white', activebackground = '#108ecb', activeforeground = 'white',
 									 font = ('verdana', 8, 'bold'),command = self.clear_frame_1)
 		self.button_clear.place(relx= 0.2, rely= 0.15,relwidth=0.1, relheight=0.15)
-		#creanting the search button
+		
+        #creanting the search button
 		self.button_search = Button(self.frame_1, text="Search",bd = 2, bg = '#107db2',
 									 fg = 'white', activebackground = '#108ecb', activeforeground = 'white',
-									 font = ('verdana', 8, 'bold'), command = self.search_customer)
+									 font = ('verdana', 8, 'bold'), command = self.search_product)
 		self.button_search.place(relx= 0.3, rely= 0.15,relwidth=0.1, relheight=0.15)
-		#creating the new button
+		
+        #creating the new button
 		self.button_new = Button(self.frame_1, text="New",bd = 2, bg = '#107db2',
 									 fg = 'white', activebackground = '#108ecb', activeforeground = 'white',
-									 font = ('verdana', 8, 'bold'), command= self.add_customer)
+									 font = ('verdana', 8, 'bold'), command= self.add_product)
 		self.button_new.place(relx= 0.6, rely= 0.15,relwidth=0.1, relheight=0.15)
-		#creating the change button
+		
+        #creating the change button
 		self.button_change = Button(self.frame_1, text="Change", bd = 2, bg = '#107db2',
 									 fg = 'white', activebackground = '#108ecb', activeforeground = 'white',
-									 font = ('verdana', 8, 'bold'), command = self.change_customers)
+									 font = ('verdana', 8, 'bold'), command = self.change_products)
 		self.button_change.place(relx= 0.7, rely= 0.15,relwidth=0.1, relheight=0.15)
-		#creating the delete button
+		
+        #creating the delete button
 		self.button_delete = Button(self.frame_1, text="Delete", bd = 2, bg = '#107db2',
 									 fg = 'white', activebackground = '#108ecb', activeforeground = 'white', 
-									 font = ('verdana', 8, 'bold'), command = self.delete_customer)
+									 font = ('verdana', 8, 'bold'), command = self.delete_product)
 		self.button_delete.place(relx= 0.8, rely= 0.15,relwidth=0.1, relheight=0.15)
-		#label code
+		
+        #label code
 		self.label_code= Label(self.frame_1, text="Code", bg = '#B0C4DE')
 		self.label_code.place(relx=0.05, rely=0.05)
 		self.code_entry= Entry(self.frame_1)
 		self.code_entry.place(relx=0.05, rely= 0.16, relwidth=0.08)
-		#label name 
+		
+        #label name 
 		self.label_name= Label(self.frame_1, text="Name", bg = '#B0C4DE')
 		self.label_name.place(relx=0.05, rely=0.35)
 		self.name_entry= Entry(self.frame_1)
 		self.name_entry.place(relx=0.05, rely= 0.45, relwidth=0.85)
-		#label telephone
-		self.label_phone= Label(self.frame_1, text="Phone", bg = '#B0C4DE')
-		self.label_phone.place(relx=0.05, rely=0.6)
-		self.phone_entry= Entry(self.frame_1)
-		self.phone_entry.place(relx=0.05, rely= 0.7, relwidth=0.4)
-		#label description
-		self.label_city= Label(self.frame_1, text="City", bg = '#B0C4DE')
-		self.label_city.place(relx=0.5, rely=0.6)
-		self.city_entry= Entry(self.frame_1)
-		self.city_entry.place(relx=0.5, rely= 0.7, relwidth=0.4)
+		
+        #label televalue
+		self.label_value= Label(self.frame_1, text="Value", bg = '#B0C4DE')
+		self.label_value.place(relx=0.05, rely=0.6)
+		self.value_entry= Entry(self.frame_1)
+		self.value_entry.place(relx=0.05, rely= 0.7, relwidth=0.4)
+		
+        #label description
+		self.label_expiration= Label(self.frame_1, text="Expiration", bg = '#B0C4DE')
+		self.label_expiration.place(relx=0.5, rely=0.6)
+		self.expiration_entry= Entry(self.frame_1)
+		self.expiration_entry.place(relx=0.5, rely= 0.7, relwidth=0.4)
 
 
 	def widgets_Frame_2(self):
@@ -230,8 +238,8 @@ class aplication(functions, reports):
 		self.listaCli.heading("#0", text = "")
 		self.listaCli.heading("#1", text = "Code")
 		self.listaCli.heading("#2", text = "Name")
-		self.listaCli.heading("#3", text = "Phone")
-		self.listaCli.heading("#4", text = "City")
+		self.listaCli.heading("#3", text = "value")
+		self.listaCli.heading("#4", text = "expiration")
 		self.listaCli.column('#0', width=1)
 		self.listaCli.column('#1', width=50)
 		self.listaCli.column('#2', width=200)
@@ -254,5 +262,6 @@ class aplication(functions, reports):
 		menu_bar.add_cascade(label = "Reports", menu = file_menu_2)
 		file_menu.add_command(label = "Quit", command = quit)
 		file_menu.add_command(label = "Clear frame", command = self.clear_frame_1)
-		file_menu_2.add_command(label = "Customer File", command = self.generate_customer_report)
+		file_menu_2.add_command(label = "Product File", command = self.generate_product_report)
+
 aplication()
